@@ -45,6 +45,12 @@ LIMITE = {
 # Cate simulari pot rula in acelasi timp.
 MAX_SESIUNI = 10
 
+# O simulare fara niciun client conectat se opreste singura dupa acest timp.
+GRACE_FARA_CLIENTI_S = 30.0
+
+# Durata maxima de viata a unei simulari (timp real), ca plasa de siguranta.
+MAX_DURATA_S = 15 * 60.0
+
 
 def _numar(data, cheie, implicit, ca_int=False):
     """Citeste un numar din JSON-ul cererii si il aduce in limitele lui.
@@ -66,12 +72,18 @@ def _numar(data, cheie, implicit, ca_int=False):
 
 class SimulationSession:
     def __init__(self, sim_id):
-        self.sim_id     = sim_id
-        self.simulator  = None
-        self.running    = False
-        self.thread     = None
-        self.model_type = ""
-        self.sim_speed  = 5.0
+        self.sim_id      = sim_id
+        self.simulator   = None
+        self.running     = False
+        self.thread      = None
+        self.model_type  = ""
+        self.sim_speed   = 5.0
+        self.created_at  = time.time()
+        # Clientii (sid-uri Socket.IO) abonati la aceasta simulare.
+        # Cand multimea e goala mai mult de GRACE_FARA_CLIENTI_S secunde,
+        # bucla de simulare se opreste singura.
+        self.subscribers = set()
+        self.ultim_client_la = time.time()
 
 
 sessions    = {}
@@ -253,6 +265,14 @@ def run_simulation(sim_id):
     while session.running:
         t_start = time.time()
 
+        # Auto-oprire: durata maxima depasita sau niciun client conectat.
+        if session.subscribers:
+            session.ultim_client_la = t_start
+        if (t_start - session.created_at > MAX_DURATA_S
+                or t_start - session.ultim_client_la > GRACE_FARA_CLIENTI_S):
+            session.running = False
+            break
+
         # Cati pasi dt incap intr-un frame la viteza curenta.
         steps = max(1, int(round(frame_time * session.sim_speed / sim.dt)))
         for _ in range(steps):
@@ -342,13 +362,21 @@ def handle_connect():
 @socketio.on('subscribe_simulare')
 def handle_subscribe(data):
     sim_id = (data or {}).get('sim_id')
-    if sim_id:
-        join_room(f'sim_{sim_id}')
+    if not sim_id:
+        return
+    join_room(f'sim_{sim_id}')
+    with global_lock:
+        if sim_id in sessions:
+            sessions[sim_id].subscribers.add(request.sid)
+            sessions[sim_id].ultim_client_la = time.time()
 
 
 @socketio.on('disconnect')
 def handle_disconnect():
-    pass
+    sid = request.sid
+    with global_lock:
+        for session in sessions.values():
+            session.subscribers.discard(sid)
 
 
 

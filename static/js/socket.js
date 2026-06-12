@@ -110,6 +110,18 @@ window.stopSimulationCall      = stopSimulationCall;
 window.applyManualPerturbation = sendManualPerturbation;
 window.setSimSpeedCall         = setSimSpeedCall;
 
+// La inchiderea/refresh-ul paginii trimitem un stop catre server,
+// ca simularea sa nu ramana sa ruleze degeaba. sendBeacon e singura
+// metoda fiabila intr-un eveniment de tip pagehide.
+window.addEventListener('pagehide', () => {
+    if (!window.currentSimId) return;
+    const payload = new Blob(
+        [JSON.stringify({ sim_id: window.currentSimId })],
+        { type: 'application/json' }
+    );
+    navigator.sendBeacon('/api/simulare/stop', payload);
+});
+
 document.addEventListener('DOMContentLoaded', () => {
     initSocket();
 });
