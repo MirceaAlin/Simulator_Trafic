@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+
+{% block title %}Simulator Trafic{% endblock %}
+
+{% block content %}
+<div class="simulator-layout">
+    <!-- PANEL STÂNGA -->
+    <aside class="panel-left">
+        <div class="panel-header">
+            <h2>Configurare</h2>
+        </div>
+        <div class="panel-body">
+            <!-- Traseu -->
+            <div class="config-section">
+                <label for="traseu-select">Traseu:</label>
+                <select id="traseu-select" class="form-control"></select>
+                <button id="btn-draw-route" class="btn btn-outline btn-full mt-2">Rută nouă</button>
+                <div class="route-info mt-2">
+                    <p id="route-length">Lungime: -- km</p>
+                    <p id="route-speed">Viteza limită: 50 km/h</p>
+                </div>
+            </div>
+
+            <!-- Model -->
+            <div class="config-section">
+                <label>Model matematic:</label>
+                <div class="radio-group">
+                    <label class="radio-label">
+                        <input type="radio" name="model-type" value="herman" checked>
+                        <span>Herman (1959)</span>
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="model-type" value="bando">
+                        <span>Bando (1995)</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Parametri Herman -->
+            <div id="params-herman" class="config-section params-group">
+                <h4>Parametri Herman</h4>
+                <div class="form-group">
+                    <label for="slider-lam">Sensibilitate (λ): <span id="val-lam">0.3</span></label>
+                    <input type="range" id="slider-lam" min="0.1" max="2.0" step="0.1" value="0.3">
+                </div>
+                <div class="form-group">
+                    <label for="slider-delta">Timp reacție (Δ): <span id="val-delta">1.0</span>s</label>
+                    <input type="range" id="slider-delta" min="0.5" max="3.0" step="0.1" value="1.0">
+                </div>
+                <div class="calc-indicator">
+                    <p>C = λΔ/M = <span id="calc-c">0.30</span></p>
+                    <div id="herman-color-indicator" class="color-badge green">C ≤ 1/e</div>
+                </div>
+            </div>
+
+            <!-- Parametri Bando -->
+            <div id="params-bando" class="config-section params-group hidden">
+                <h4>Parametri Bando (OVM)</h4>
+                <div class="form-group">
+                    <label for="slider-a">Sensibilitate (a): <span id="val-a">0.5</span></label>
+                    <input type="range" id="slider-a" min="0.1" max="2.0" step="0.05" value="0.5">
+                </div>
+                <div class="calc-indicator">
+                    <p>f = V'(b) = <span id="calc-f">--</span></p>
+                    <p>a/2 = <span id="calc-a-half">0.250</span></p>
+                    <div id="bando-color-indicator" class="color-badge gray">--</div>
+                </div>
+            </div>
+
+            <!-- Trafic -->
+            <div class="config-section">
+                <h4>Configurare trafic</h4>
+                <div class="form-group">
+                    <label for="slider-n">Număr mașini (N): <span id="val-n">50</span></label>
+                    <input type="range" id="slider-n" min="5" max="200" step="5" value="50">
+                </div>
+                <div class="form-group">
+                    <label for="perturbatie-select">Tip perturbație inițială:</label>
+                    <select id="perturbatie-select" class="form-control">
+                        <option value="niciuna">Niciuna (flux liber)</option>
+                        <option value="usoara">Frânare ușoară</option>
+                        <option value="brusca">Frânare bruscă</option>
+                        <option value="oprire">Mașină care se oprește</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Acțiuni -->
+            <div class="action-buttons">
+                <button id="btn-start" class="btn btn-success btn-full">Start Simulare</button>
+                <button id="btn-stop"  class="btn btn-warning btn-full hidden">Oprește Simulare</button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ZONA CENTRALĂ -->
+    <section class="panel-center">
+        <!-- Harta Leaflet -->
+        <div class="map-container">
+            <div id="map"></div>
+            <div id="routing-tools" class="routing-overlay hidden">
+                <p>Click pe hartă pentru a plasa <strong>Start</strong> și <strong>End</strong>.</p>
+                <button id="btn-accept-route" class="btn btn-primary btn-sm">Folosește această rută</button>
+                <button id="btn-cancel-route" class="btn btn-outline btn-sm">Anulează</button>
+            </div>
+        </div>
+
+        <!-- Animație Canvas -->
+        <div class="canvas-container">
+            <div class="canvas-header">
+                <h3>Vizualizare Trafic</h3>
+                <span id="sim-time" class="time-badge">t = 0min 00s</span>
+            </div>
+            <canvas id="anim-canvas" width="800" height="200"></canvas>
+            <p class="hint">Click pe o mașină pentru a-i aplica o perturbație manuală.</p>
+        </div>
+
+        <!-- Diagrama spațiu-timp (mare, ocupă toată zona centrală) -->
+        <div class="chart-wrapper-large chart-spatiu-mare">
+            <canvas id="chart-spatiu-timp"></canvas>
+        </div>
+    </section>
+
+    <!-- PANEL DREAPTA -->
+    <aside class="panel-right">
+        <div class="panel-header">
+            <h2>Rezultate</h2>
+        </div>
+        <div class="panel-body panel-body-centered">
+
+            <!-- 1. Indicator Stabilitate -->
+            <div class="stability-hero">
+                <div id="main-stability-circle" class="circle-indicator gray">
+                    <span id="main-stability-text">Așteptare</span>
+                </div>
+                <p id="main-stability-val" class="mt-2 text-center text-sm">--</p>
+            </div>
+
+            <!-- 2. Slider viteza simulare -->
+            <div class="form-group speed-slider-block">
+                <label for="slider-sim-speed">Viteza simulare: <span id="val-sim-speed">5</span>x</label>
+                <input type="range" id="slider-sim-speed" min="1" max="10" step="1" value="5">
+            </div>
+
+            <!-- 3-5. Statistici una sub alta, centrate -->
+            <div class="stats-column">
+                <div class="stat-box">
+                    <span class="stat-label">Viteză medie</span>
+                    <span class="stat-value" id="stat-vmed">-- km/h</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">Dif. max-min</span>
+                    <span class="stat-value" id="stat-vdif">-- km/h</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">Coliziuni</span>
+                    <span class="stat-value" id="stat-coliziuni">0</span>
+                </div>
+            </div>
+
+            <!-- 6. Grafic viteză (sub rezultate) -->
+            <div class="chart-wrapper-right mt-4">
+                <canvas id="chart-viteza"></canvas>
+            </div>
+
+        </div>
+    </aside>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/socket.js') }}"></script>
+<script src="{{ url_for('static', filename='js/grafic.js') }}"></script>
+<script src="{{ url_for('static', filename='js/animatie.js') }}"></script>
+<script src="{{ url_for('static', filename='js/harta.js') }}"></script>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% endblock %}

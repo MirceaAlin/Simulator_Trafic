@@ -1,0 +1,265 @@
+{% extends "base.html" %}
+
+{% block title %}Simulator Trafic - Acasă{% endblock %}
+
+{% block content %}
+
+<!-- HERO -->
+<section class="hero">
+    <div class="hero-content">
+        <h1 class="hero-title">Simulator Trafic</h1>
+        <p class="hero-subtitle">Simulare microscopică de trafic cu modelele Herman (1959) și Bando (1995)</p>
+        <div class="hero-actions">
+            <a href="/simulator" class="btn btn-primary btn-large">Începe simularea</a>
+        </div>
+    </div>
+</section>
+
+<!-- INTRO -->
+<section class="about-section">
+    <div class="container">
+        <div class="about-content">
+            <h2 class="section-title">Despre aplicație</h2>
+            <p>Aplicația simulează traficul pe trei trasee din Cluj-Napoca care intră spre
+            centru: Calea Turzii, dinspre Vivo Mall și dinspre Iulius Mall. Folosește două
+            modele matematice de tip "car-following".</p>
+            <p>Mai jos sunt explicate cele două modele, condițiile lor de stabilitate și
+            câteva seturi de parametri pe care le poți copia în simulator ca să vezi
+            fiecare comportament.</p>
+        </div>
+    </div>
+</section>
+
+<!-- MODEL HERMAN -->
+<section class="models-section">
+    <div class="container">
+        <h2 class="section-title">Modelul Herman et al. (1959)</h2>
+
+        <div class="content-box">
+            <h3>Despre model</h3>
+            <p>În modelul Herman fiecare șofer accelerează sau frânează în funcție de
+            diferența de viteză față de mașina din față, dar cu un timp de reacție Delta.
+            Ecuația pentru mașina <em>n</em> este:</p>
+
+            <p class="formula-display">
+                M &middot; a<sub>n</sub>(t) = &lambda; &middot; ( v<sub>n+1</sub>(t - &Delta;) - v<sub>n</sub>(t - &Delta;) )
+            </p>
+
+            <p>Stabilitatea depinde de un singur număr:</p>
+            <p class="formula-display">C = &lambda; &middot; &Delta; / M</p>
+
+            <h3>Regimuri de stabilitate</h3>
+            <ul class="regime-list">
+                <li>
+                    <span class="regime-badge green">C &le; 1/e (aprox. 0.368)</span>
+                    <strong>Stabil neoscilatoriu.</strong> O frânare se amortizează lin,
+                    fără oscilații. Mașinile revin la viteza inițială în câteva secunde.
+                </li>
+                <li>
+                    <span class="regime-badge yellow">1/e &lt; C &lt; 1/2</span>
+                    <strong>Stabil oscilatoriu.</strong> Perturbația se amortizează, dar
+                    întâi trece ca o undă prin mașinile din spate.
+                </li>
+                <li>
+                    <span class="regime-badge orange">1/2 &le; C &lt; &pi;/2</span>
+                    <strong>Asimptotic instabil.</strong> Undele cresc în loc să se stingă.
+                    Diferența dintre viteza maximă și minimă se mărește în timp.
+                </li>
+                <li>
+                    <span class="regime-badge red">C &ge; &pi;/2 (aprox. 1.571)</span>
+                    <strong>Local instabil.</strong> Apar viteze negative (mașini care dau
+                    înapoi), ceea ce în acest model înseamnă coliziuni. Indicatorul de
+                    coliziuni începe să crească.
+                </li>
+            </ul>
+
+            <h3>Exemple</h3>
+            <div class="examples-grid">
+                <div class="example-card green-border">
+                    <h4>Caz 1: Stabil neoscilatoriu</h4>
+                    <ul class="param-list">
+                        <li>Model: <strong>Herman</strong></li>
+                        <li>&lambda;: <strong>0.3</strong></li>
+                        <li>&Delta;: <strong>1.0</strong></li>
+                        <li>N: <strong>30</strong></li>
+                        <li>Perturbație: <strong>Frânare bruscă</strong></li>
+                    </ul>
+                    <p class="example-pred">C = 0.30. Mașina 1 frânează și revine la viteza
+                    normală în câteva secunde. Diferența max-min scade repede spre 0.</p>
+                </div>
+
+                <div class="example-card yellow-border">
+                    <h4>Caz 2: Stabil oscilatoriu</h4>
+                    <ul class="param-list">
+                        <li>Model: <strong>Herman</strong></li>
+                        <li>&lambda;: <strong>0.4</strong></li>
+                        <li>&Delta;: <strong>1.0</strong></li>
+                        <li>N: <strong>40</strong></li>
+                        <li>Perturbație: <strong>Frânare bruscă</strong></li>
+                    </ul>
+                    <p class="example-pred">C = 0.40. Perturbația se propagă înapoi din
+                    mașină în mașină ca o undă, apoi se amortizează.</p>
+                </div>
+
+                <div class="example-card orange-border">
+                    <h4>Caz 3: Asimptotic instabil</h4>
+                    <ul class="param-list">
+                        <li>Model: <strong>Herman</strong></li>
+                        <li>&lambda;: <strong>0.6</strong></li>
+                        <li>&Delta;: <strong>1.0</strong></li>
+                        <li>N: <strong>40</strong></li>
+                        <li>Perturbație: <strong>Frânare bruscă</strong></li>
+                    </ul>
+                    <p class="example-pred">C = 0.60, între 1/2 și &pi;/2. Undele cresc în
+                    amplitudine și diferența max-min se mărește în timp, dar încă fără
+                    coliziuni.</p>
+                </div>
+
+                <div class="example-card red-border">
+                    <h4>Caz 4: Local instabil (coliziuni)</h4>
+                    <ul class="param-list">
+                        <li>Model: <strong>Herman</strong></li>
+                        <li>&lambda;: <strong>1.8</strong></li>
+                        <li>&Delta;: <strong>1.0</strong></li>
+                        <li>N: <strong>30</strong></li>
+                        <li>Perturbație: <strong>Frânare bruscă</strong></li>
+                    </ul>
+                    <p class="example-pred">C = 1.80. În sub 30 de secunde simulate
+                    indicatorul de coliziuni urcă, iar vitezele o iau razna.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- MODEL BANDO -->
+<section class="models-section alt-bg">
+    <div class="container">
+        <h2 class="section-title">Modelul Bando et al. (1995)</h2>
+
+        <div class="content-box">
+            <h3>Despre model</h3>
+            <p>În modelul Bando fiecare șofer încearcă să atingă o viteză optimă V care
+            depinde de distanța până la mașina din față. Nu există timp de reacție:</p>
+
+            <p class="formula-display">
+                a<sub>n</sub> = a &middot; ( V(&Delta;x<sub>n</sub>) - v<sub>n</sub> )
+            </p>
+
+            <p>Aici <em>a</em> este sensibilitatea șoferului. Viteza optimă crește de la 0
+            (când distanța e zero) până la 50 km/h (la distanță mare), trecând prin 25 km/h
+            la distanța de echilibru <em>b = L/N</em>.</p>
+
+            <h3>Regimuri de stabilitate</h3>
+            <ul class="regime-list">
+                <li>
+                    <span class="regime-badge green">f &lt; a/2 (sub 0.9)</span>
+                    <strong>Stabil.</strong> Perturbațiile se amortizează, fluxul rămâne uniform.
+                </li>
+                <li>
+                    <span class="regime-badge yellow">f aprox. a/2</span>
+                    <strong>Marginal.</strong> Oscilațiile rămân mici și aproape constante.
+                </li>
+                <li>
+                    <span class="regime-badge orange">f &gt; a/2 (de 1-2 ori)</span>
+                    <strong>Instabil.</strong> Se formează ambuteiaje stop-and-go în câteva minute.
+                </li>
+                <li>
+                    <span class="regime-badge red">f mult peste a/2 (peste 2 ori)</span>
+                    <strong>Foarte instabil.</strong> Ambuteiaje stop-and-go puternice, care
+                    apar rapid și rămân.
+                </li>
+            </ul>
+
+            <p style="margin-top:1rem;">f depinde doar de distanța de echilibru b = L/N, deci
+            de câte mașini pui pe traseu. Cu cât N e mai mare (trafic mai dens), cu atât f
+            crește și fluxul devine instabil.</p>
+
+            <h3>Exemple</h3>
+            <div class="examples-grid">
+                <div class="example-card green-border">
+                    <h4>Caz 1: Stabil</h4>
+                    <ul class="param-list">
+                        <li>Model: <strong>Bando</strong></li>
+                        <li>a: <strong>1.0</strong></li>
+                        <li>N: <strong>30</strong></li>
+                        <li>Traseu: <strong>Calea Turzii</strong></li>
+                        <li>Perturbație: <strong>Frânare bruscă</strong></li>
+                    </ul>
+                    <p class="example-pred">Mașina 1 frânează și revine repede la 25 km/h.
+                    Restul rămân la 25 km/h, diferența max-min stă lângă 0.</p>
+                </div>
+
+                <div class="example-card yellow-border">
+                    <h4>Caz 2: Marginal</h4>
+                    <ul class="param-list">
+                        <li>Model: <strong>Bando</strong></li>
+                        <li>a: <strong>0.6</strong></li>
+                        <li>N: <strong>75</strong></li>
+                        <li>Traseu: <strong>Calea Turzii</strong></li>
+                        <li>Perturbație: <strong>Frânare bruscă</strong></li>
+                    </ul>
+                    <p class="example-pred">f este aproape egal cu a/2. Apar oscilații mici
+                    de câțiva km/h care nu cresc și nu dispar.</p>
+                </div>
+
+                <div class="example-card orange-border">
+                    <h4>Caz 3: Instabil</h4>
+                    <ul class="param-list">
+                        <li>Model: <strong>Bando</strong></li>
+                        <li>a: <strong>0.5</strong></li>
+                        <li>N: <strong>100</strong></li>
+                        <li>Traseu: <strong>Calea Turzii</strong></li>
+                        <li>Perturbație: <strong>Frânare bruscă</strong></li>
+                    </ul>
+                    <p class="example-pred">După 2-3 minute simulate diferența max-min ajunge
+                    la 30-40 km/h. Unele mașini încetinesc mult, altele accelerează.</p>
+                </div>
+
+                <div class="example-card red-border">
+                    <h4>Caz 4: Foarte instabil</h4>
+                    <ul class="param-list">
+                        <li>Model: <strong>Bando</strong></li>
+                        <li>a: <strong>0.3</strong></li>
+                        <li>N: <strong>150</strong></li>
+                        <li>Traseu: <strong>Calea Turzii</strong></li>
+                        <li>Perturbație: <strong>Frânare bruscă</strong></li>
+                    </ul>
+                    <p class="example-pred">Ambuteiaj stop-and-go clar, care apare în primul
+                    minut. Vitezele minime scad sub 5 km/h iar maximele trec de 40 km/h.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CUM SE FOLOSEȘTE -->
+<section class="about-section">
+    <div class="container">
+        <h2 class="section-title">Cum se folosește simulatorul</h2>
+        <div class="content-box">
+            <ol class="tutorial-steps">
+                <li>Alege un <strong>traseu</strong> din meniul drop-down (sau desenează unul propriu).</li>
+                <li>Selectează <strong>modelul</strong> (Herman sau Bando).</li>
+                <li>Ajustează parametrii din slidere (vezi exemplele de mai sus).</li>
+                <li>Alege un <strong>tip de perturbație</strong> inițială (frânare ușoară, bruscă, sau oprire completă).</li>
+                <li>Apasă <strong>Start Simulare</strong>.</li>
+                <li>Urmărește:
+                    <ul>
+                        <li><strong>Harta</strong> - mașinile circulă pe traseu cu culori după viteză.</li>
+                        <li><strong>Indicator stabilitate</strong> - cercul mare colorat din dreapta.</li>
+                        <li><strong>Grafic viteză</strong> - min, medie, max în timp.</li>
+                        <li><strong>Spațiu-timp</strong> - traiectoriile ultimelor 3 mașini.</li>
+                    </ul>
+                </li>
+                <li>Click pe o mașină în canvas pentru a-i aplica o perturbație manuală.</li>
+            </ol>
+        </div>
+    </div>
+</section>
+
+<div class="hero-actions" style="margin: 2rem auto 4rem auto; text-align: center;">
+    <a href="/simulator" class="btn btn-primary btn-large">Începe simularea</a>
+</div>
+
+{% endblock %}
